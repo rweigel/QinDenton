@@ -32,8 +32,8 @@ allhour:
 	make hourall
 	make mergekpdst
 	make mergehour
-	sudo make mergetoftphour
-	sudo make symlinkhour
+	make mergetoftphour
+	make symlinkhour
 
 all5min:
 	make dirs
@@ -45,8 +45,8 @@ all5min:
 	make 5minall
 	make mergekpdst
 	make merge5min
-	sudo make mergetoftp5min
-#	sudo make symlink5min
+	make mergetoftp5min
+#	make symlink5min
 
 all1min:
 	make dirs
@@ -58,8 +58,8 @@ all1min:
 	make 1minall
 	make mergekpdst
 	make merge1min
-	sudo make mergetoftp1min
-	sudo make symlink1min
+	make mergetoftp1min
+	make symlink1min
 
 all:
 	make clean1min
@@ -69,8 +69,8 @@ all:
 	make 5minall
 	make 1minall
 	make merge
-	sudo make mergetoftp
-	sudo make symlink
+	make mergetoftp
+	make symlink
 
 MagmodelinputONE: MagmodelinputONE.f
 	gfortran -o MagmodelinputONE MagmodelinputONE.f
@@ -166,7 +166,6 @@ symlink1min:
 	 ln -s ../QinDenton_1min_merged_$(TIMESTAMP)-v$(VerMn).mat.zip QinDenton_1min-latest.mat.zip
 	cd $(MERGEDIR)/1min/merged/latest; \
 	 ln -s ../QinDenton_1min_merged_$(TIMESTAMP)-v$(VerMn).mat QinDenton_1min-latest.mat
-
 
 omnikpdst:
 	make 5min/kpdst.lst
