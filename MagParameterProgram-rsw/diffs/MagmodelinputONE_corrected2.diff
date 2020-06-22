@@ -1,0 +1,163 @@
+9a10,11
+> c      double precision fyr1,fyr2
+> c      common /cfyr/ fyr1,fyr2
+21a24
+> 
+22a26,29
+> c      open(unit=11,file='min.i')
+> c       read(11,*) iformat
+> c       close(11)
+> 
+256a264
+> 
+294c302
+<       parameter (nipyr=365,nyr=20,ni=nipyr*nyr, nj=11)
+---
+>       parameter (nipyr=365,nyr=40,ni=nipyr*nyr, nj=11)
+454a463
+> c      double precision doy2fyear,fyr,fyr1,fyr2
+480a490,512
+> 
+> cc Limit data to times within which there are measured values
+> c      fyr1 = -1.0d0
+> c      do
+> c        read(2,40,err=15,end=15) iyr4,idoy,ihr,imin,(idmy(i),i=1,7),d,ii 
+> c     $      ,(dummy(i),i=1,24) 
+> c        By=dummy(5) 
+> c        Bz=dummy(6)
+> c        V=dummy(9)
+> c        den=dummy(13)
+> c        P=dummy(15)  
+> c        fyr = doy2fyear( iyr4, idoy, ihr, imin, 0 )
+> c        if(   By.ne.9999.99 .and. Bz.ne.9999.99 .and. den.ne.999.99
+> c     &      .and. V.ne.99999.9 .and. P.ne.99.99 ) then
+> c          if( fyr1.lt.0.0d0 ) then
+> c            fyr1 = fyr
+> c          endif
+> c          fyr2 = fyr
+> c        endif
+> c      enddo
+> c15    close(2)
+> c      open(unit=2,file=finput2,status='old') 
+> 
+485a518,519
+> c         fyr = doy2fyear( iyr4, idoy, ihr, imin, 0 )
+> c         if( fyr.lt.fyr1 .or. fyr.gt.fyr2 ) continue
+1021a1056,1057
+> c        double precision doy2fyear,fyr,fyr1,fyr2
+> c        common /cfyr/ fyr1,fyr2
+1036a1073,1090
+> 
+> cc Limit data to times within which there are measured values
+> c      fyr1 = -1.0d0
+> c      do
+> c        read(1,40,err=15,end=15) iyr,idoy,ihr,imin,aa,By,Bz,aa,
+> c     $    V,aa,N,aa,P,aa
+> c        fyr = doy2fyear( iyr, idoy, ihr, imin, 0 )
+> c        if(   By.ne.9999.99 .and. Bz.ne.9999.99 .and. N.ne.999.99
+> c     &      .and. V.ne.99999.9 .and. P.ne.99.99 ) then
+> c          if( fyr1.lt.0.0d0 ) then
+> c            fyr1 = fyr
+> c          endif
+> c          fyr2 = fyr
+> c        endif
+> c      enddo
+> c15    close(1)
+> c      open(unit=1,file=finput,status='old') 
+> 
+1039a1094,1095
+> c      fyr = doy2fyear( iyr, idoy, ihr, imin, 0 )
+> c      if( fyr.lt.fyr1 .or. fyr.gt.fyr2 ) goto 10
+1059a1116
+>       close(2)
+1068c1125
+<       parameter (nipyr=365,nyr=20,ni=nipyr*nyr, nj=11)
+---
+>       parameter (nipyr=365,nyr=40,ni=nipyr*nyr, nj=11)
+1075c1132
+<       iy1= nint(y1)
+---
+>       Iy1= nint(y1)
+1218a1276,1277
+> c      double precision doy2fyear,fyr,fyr1,fyr2
+> c      common /cfyr/ fyr1,fyr2
+1239c1298,1299
+<       open(unit=2,file=finput2,status='old')
+---
+>       open(unit=2,file=finput2,status='old') 
+> 
+1243a1304,1305
+> c         fyr = doy2fyear( iyr4, idoy, ihr, imin, 0 )
+> c         if( fyr.lt.fyr1 .or. fyr.gt.fyr2 ) continue
+1596c1658,1659
+<       if(idy1.eq.idy.and.ihr1.eq.ihr.and.imn1.eq.imn) then
+---
+>       if(iyr1.eq.iyr.and.idy1.eq.idy.and.ihr1.eq.ihr.and.imn1.eq.imn)
+>      &                                                            then
+1617a1681
+>       double precision doy2fyear,fyr,fyr1,fyr2
+1639a1704,1720
+> c Limit data to times within which there are measured values
+>       fyr1 = -1.0d0
+>       do
+>         read(1,300,err=15,end=15) iyr4,idoy,ihr,aa,by,bz,aa,N,
+>      $         V,aa,P,aa,Kkp,aa,dst,aa
+>         fyr = doy2fyear( iyr4, idoy, ihr, 30, 0 )
+>         if(   by.ne.999.9 .and. bz.ne.999.9 .and. N.ne.999.9
+>      &      .and. V.ne.9999. .and. P.ne.99.99 ) then
+>           if( fyr1.lt.0.0d0 ) then
+>             fyr1 = fyr
+>           endif
+>           fyr2 = fyr
+>         endif
+>       enddo
+> 15    close(1)
+>       open(unit=1,file=finput,status='old') 
+> 
+1641a1723,1727
+> 300    format(2i4,i3,a61,2f6.1,a39,f6.1,f6.0,a18,f6.2,a59,i3,a4,i6,a63)
+> 
+>       fyr = doy2fyear( iyr4, idoy, ihr, 30, 0 )
+>       if( fyr.lt.fyr1 .or. fyr.gt.fyr2 ) goto 10
+> 
+1645d1730
+<  300  format(2i4,i3,a61,2f6.1,a39,f6.1,f6.0,a18,f6.2,a59,i3,a4,i6,a63)
+1702c1787
+<       parameter (nipyr=1,nyr=50,ni=nipyr*nyr, nj=11)
+---
+>       parameter (nipyr=1,nyr=70,ni=nipyr*nyr, nj=11)
+1790c1875
+<       parameter (nipyr=18,nyr=50,ni=nipyr*nyr, nj=11)
+---
+>       parameter (nipyr=18,nyr=70,ni=nipyr*nyr, nj=11)
+2096c2181
+<       nm=n
+---
+>       nm=n-1
+2466a2552,2577
+> cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+>       double precision function doy2fyear( iyr4in, idoy, ihr, imn, isc )
+> cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+> C      double precision daysInYear,fdoy,doy2fyear,val
+>       double precision daysInYear,fdoy,val
+> 
+>       iyr4 = iyr4in
+>       if( iyr4<100 ) then
+>         if( iyr4<=50 ) then
+>           iyr4 = iyr4 + 2000
+>         else
+>           iyr4 = iyr4 + 1900
+>         endif
+>       endif
+>       if( mod(iyr4,4)==0 ) then
+>         daysInYear = 366.0d0
+>       else
+>         daysInYear = 365.0d0
+>       endif
+> 
+>       fdoy = idoy-1 + (ihr + (imn + isc/60.0d0)/60.0d0)/24.0d0
+>       val = iyr4 + fdoy/daysInYear
+>       doy2fyear = val
+> 
+>       return
+>       end
