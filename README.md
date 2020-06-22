@@ -5,7 +5,7 @@ Code for creating the Qin/Denton dataset. More information about this data set i
 
 ## Use
 
-The Makefile in the MagParameterProgram-rsw directory automates the process of updating the Qin/Denton dataset, which requires downloading OMNI data files that are read by the program.
+The Makefile in the `MagParameterProgram-rsw` directory automates the process of updating the Qin/Denton dataset, which requires downloading OMNI data files that are read by the program.
 
 Note that creation of the 5-minute dataset requires a machine with at least 48 GB of RAM because it reads the full time span of the needed OMNI parameters into memory. One could modify the code to generate one QinDenton data file per year, but one has to account for the fact that there would be an amount of time at the start of the year in which the parameters are inaccurate because the code generates parameters based on a past time window of data.
 
