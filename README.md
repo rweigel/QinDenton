@@ -27,4 +27,5 @@ On 4/20/2009, Richard Denton provided `MagmodelinputmodelONE-rsw/MagmodelinputON
 
 On 10/24/2013, Richard Denton provided `MagmodelinputmodelONE-rsw/MagmodelinputONE_corrected2.f`, which is a modified version of `MagmodelinputmodelONE-rsw/MagmodelinputONE_corrected.f` that allows the code to output data past the year 2013. The difference bewteen the `MagmodelinputmodelONE-rsw/MagmodelinputONE_corrected.f` and `MagmodelinputmodelONE-rsw/MagmodelinputONE_corrected2.f` are shown in `MagmodelinputmodelONE-rsw/diffs/MagmodelinputONE_corrected2.f.diff`.
 
+Steve Morely modified `MagmodelinputmodelONE-rsw/MagmodelinputmodelONE.f` to create [Code.f](https://rbsp-ect.newmexicoconsortium.org/data_pub/QinDenton/Code.f) (see his [README](https://rbsp-ect.newmexicoconsortium.org/data_pub/QinDenton/Code.f). The differences between these two versions is in `MagmodelinputmodelONE-rsw/diffs/MagmodelinputONE_corrected2.f.diff`.
 

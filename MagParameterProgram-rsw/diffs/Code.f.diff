@@ -1,0 +1,1208 @@
+5,6c5,9
+< c                                                                                c
+< c     By Zhengrui Qin and Richard Denton, 09/01/2007                             c 
+---
+> c     By Zhengrui Qin and Richard Denton, 09/01/2007                             c
+> c     Original code from                                                         c
+> c     http://virbo.org/svn/virbo/qindenton/                                      c
+> c           MagParameterProgram-rsw/MagmodelinputONE_corrected.f                 c
+> c     LANL updated version, 2015 (fix for more recent compilers in 2017)         c
+8,9d10
+< C      character yesno*3
+<       common istart,wst(6)
+11,23c12,28
+< C      write(*,*)''
+< C      write(*,*)'Please read readme.txt (where to download input files)'
+< C      write(*,*)''
+< C      write(*,*)'cccccccccccccccccccccccccccccccccccccccccccccccccccccc' 
+< C      write(*,*)'c    Please choose the data format of input files    c'
+< C      write(*,*)'c    IFORMAT = 1 for one minute data                 c'
+< C      write(*,*)'c    IFORMAT = 5 for five minute data                c'
+< C      write(*,*)'c    IFORMAT = 60 for hourly data                    c'
+< C      write(*,*)'c    Please input IFORMAT:                           c'
+< C      write(*,*)'cccccccccccccccccccccccccccccccccccccccccccccccccccccc'
+< C 71   read(*,*)iformat
+<       READ *, iformat
+< c      write(*,*)'IFORMAT =',iformat
+---
+> c      write(*,*)'c    IFORMAT = 1 for one minute data                 c'
+> c      write(*,*)'c    IFORMAT = 5 for five minute data                c'
+> c      write(*,*)'c    IFORMAT = 60 for hourly data                    c'
+> c      write(*,*)'cccccccccccccccccccccccccccccccccccccccccccccccccccccc'
+> 
+>       character ychar*4,fchar*24,filein*32,dumchar*19
+>       real dmy(100)
+>       common /years/year0,nyrs
+>       common wst(6)
+>       integer iyear
+> 
+>       write (*,*) ' please input cadence, starting year, no of years'
+>       read (*,*) iformat,year0,nyrs
+>       write (*,111) iformat,year0,year0+nyrs-1
+>  111  format (' input: cadence',i4,' min  starting year',f6.0,
+>      & ' ending year',f6.0)
+> 
+25,26c30,31
+<            write(*,*)'  Input error, please input again.  '
+< C           goto 71
+---
+>        write(*,*)' cadence must be 1 or 5 or 60; run aborted'
+>        stop
+28c33,86
+< C      write(*,*)''
+---
+>       if (iformat.eq.1.or.iformat.eq.5) then
+>        if (year0.lt.1995) then
+>         write (*,*)' starting year must be after 1994; run aborted'
+>         stop
+>        end if
+>       end if
+>       if (iformat.eq.60) then
+>        if (year0.lt.1963) then
+>         write (*,*)' starting year must be after 1962; run aborted' 
+>         stop
+>        end if
+>       end if
+> c     if (year0+nyrs.gt.2016) then
+> c      write (*,*)' last year cannot be after 2015; run aborted'
+> c      stop
+> c     end if
+> 
+>       iyear=year0-1
+>       write (ychar,'(i4)') iyear
+>       fchar=ychar//'/QinDenton_'//ychar//'1231_'
+>       filein=fchar//'1min.txt'
+>       write (*,*) 'searching ',filein
+>       open (unit=1,file=filein,err=20,status='old')       ! search for W1-6 pars in previous file
+>       do j=1,200
+>        read (1,*,end=20)                                  ! skip header (192 lines)
+>       end do
+>  90   read (1,*,err=20,end=30) dumchar,(dmy(i),i=1,31),(wst(j),j=1,6)
+>        go to 90
+>  20   filein=fchar//'5min.txt'
+>       write (*,*) 'searching ',filein
+>       open (unit=2,file=filein,err=21,status='old')
+>       do j=1,200
+>        read (2,*,end=21)                  
+>       end do
+>  91   read (2,*,err=21,end=30) dumchar,(dmy(i),i=1,31),(wst(j),j=1,6)
+>        go to 91
+>  21   filein=fchar//'hour.txt'
+>       write (*,*) 'searching ',filein
+>       open (unit=3,file=filein,err=22,status='old')
+>       do j=1,200
+>        read (3,*,end=22)                  
+>       end do
+>  92   read (3,*,err=22,end=30) dumchar,(dmy(i),i=1,31),(wst(j),j=1,6)
+>        go to 92
+>  22   write (*,*) ' did not find previous WG file, will use averages'
+>       wst(1) = 0.44    ! at the average values for status 2 in table 3
+>       wst(2) = 0.42    ! of Qin,Denton,Tsyganenko,Wolf article
+>       wst(3) = 0.66    ! in Space Weather, vol 5, issue 11
+>       wst(4) = 0.48    ! http://onlinelibrary.wiley.com/doi/10.1029/2006SW000296/full
+>       wst(5) = 0.49   
+>       wst(6) = 0.91
+> 
+>  30   write (*,130) wst(1),wst(2),wst(3),wst(4),wst(5),wst(6)
+>  130  format ('  initial Ws :',6f7.3)
+30,59d87
+< ccccc Starting options ccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+< C      write(*,*)'cccccccccccccccccccccccccccccccccccccccccccccccccccccc'
+< C      write(*,*)'c    W values starting options                       c'                            
+< C      write(*,*)'c    1 to start from 0 for all W parameters          c'
+< C      write(*,*)'c    2 to start from user specified values           c'
+< C      write(*,*)'c      (W values right before the first record       c'
+< C      write(*,*)'c       of the file which you are analyzing)         c' 
+< C      write(*,*)'c    e.g., for 5 minute data, enter the W parameters c'
+< C      write(*,*)'c      for the preceding 5 minute interval           c'
+< C      write(*,*)'c    Input the starting option:                      c'
+< C      write(*,*)'c         ( 2 is recommended )                       c'
+< C      write(*,*)'cccccccccccccccccccccccccccccccccccccccccccccccccccccc'
+< C 73   read(*,*)istart
+< C      if(istart.ne.1.and.istart.ne.2) then
+< C           write(*,*)'  Input error, please input again.  '
+< C           goto 73
+< C      endif
+< C      if(istart.eq.2) then 
+< C      write(*,*)'     Type the starting values for all six W parameters'
+< C      write(*,*)'     Six number separated by comma or space'
+< C      read(*,*)wst(1),wst(2),wst(3),wst(4),wst(5),wst(6) 
+< C      endif
+< C      write(*,*)''
+<       istart = 2
+<       wst(1) = 0.
+<       wst(2) = 0.
+<       wst(3) = 0.
+<       wst(4) = 0.
+<       wst(5) = 0.
+<       wst(6) = 0.
+61c89
+< C      iformat = 60
+---
+> 
+88a117,120
+> cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+> 
+> 
+> c  *************  FOR 1 MIN DATA ***************************************
+91a124
+> 
+92a126
+> 
+94d127
+<       common istart,wst(6)
+97a131,132
+>       common wst(6)
+>       common /years/year0,nyrs
+104c139,140
+<  33   write(*,*)finput//' NOT EXIST'
+---
+> 
+>  33   write(*,*) finput//' NOT EXIST'
+105a142
+> 
+115a153,154
+>        IF (iyr4.lt.year0.or.iyr4.ge.year0+nyrs) go to 10  ! Alin
+> c       IF (iyr4.lt.year0) go to 10  ! Alin
+153a193
+> 
+154a195
+> 
+157c198
+<       common istart,wst(6)
+---
+>       common wst(6)
+237,243d277
+< c     this program adds bs**gamma columns
+<         subroutine bsgamma_min
+<         common istart,wst(6)
+<         dimension bsg(6),gamma(6),idmy(7),dummy(24)
+<         character finput*30,fout*30
+<         real N,V,P
+< 	data gamma/0.87,0.67,1.32,1.29,0.69,0.53/
+244a279,286
+> c     this program adds bs**gamma columns    ! runs 10mins for 20years/data, and 5mins for 1year
+>       subroutine bsgamma_min
+>       dimension bsg(6),gamma(6),idmy(7),dummy(24)
+>       character finput*30,fout*30
+>       real N,V,P
+>       data gamma/0.87,0.67,1.32,1.29,0.69,0.53/
+>       common wst(6)
+>       common /years/year0,nyrs
+256a299
+> 
+259,260c302
+< 40    format(2I4,4I3,3I4,2I7,F6.2,I7, 8F8.2,4F8.1,F7.2, 
+<      $F9.0,F6.2,2F7.2,F6.1,6F8.2) 
+---
+>        IF (iyr.lt.year0.or.iyr.ge.year0+nyrs) go to 10  ! Alin
+266d307
+<          
+279a321,322
+> 40    format(2I4,4I3,3I4,2I7,F6.2,I7, 8F8.2,4F8.1,F7.2, 
+>      $F9.0,F6.2,2F7.2,F6.1,6F8.2) 
+283a327,328
+>  
+>  
+285a331,332
+>       close(1)
+>       close(2)
+290a338
+> 
+291a340
+> 
+293,295c342,344
+<       common istart,wst(6)
+<       parameter (nipyr=365,nyr=20,ni=nipyr*nyr, nj=11)
+<       dimension y(ni),p(ni,nj),w(ni,nj),pv(nj)
+---
+> 
+>       parameter (nipyr=365,nii=30000,nj=11)
+>       dimension y(nii),p(nii,nj),w(nii,nj),pv(nj)
+299c348,349
+<            
+---
+>       common wst(6)
+>       common /years/year0,nyrs
+301,302c351,352
+<       y1= 1995.
+<       iy1= nint(y1)
+---
+>       ni=nipyr*nyrs
+>       iy1= nint(year0)
+378a429
+> 
+379a431
+> 
+381,382c433,434
+<       common istart,wst(6)
+<       parameter (ni=365*20,nk=12)     
+---
+> 
+>       parameter (nk=12)     
+384c436
+<       dimension av1(nk,ni),gamma(6)
+---
+>       dimension av1(nk,36500),gamma(6)
+386,389c438,439
+<      
+< cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+<       
+<      
+---
+>       common wst(6)
+>       common /years/year0,nyrs
+390a441
+>       ni=365*nyrs
+394,397c445
+<       
+< 
+< ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc	
+< ccccccc  input the 1 day average
+---
+> cccc  input the 1 day average
+399,401c447,448
+<       
+<       do i=1,365*20
+<       read(1,*,end=35) (av1(j,i),j=1,12)
+---
+>       do i=1,ni
+>       read(1,*,end=35) (av1(j,i),j=1,nk)
+406c453
+<         do  k=2,12
+---
+>         do  k=2,nk
+430c477
+<          do k=7,12
+---
+>          do k=7,nk
+447a495
+> 
+448a497
+> 
+450,451c499,500
+<       common istart,wst(6)
+<       parameter(nc=11,nd=386)
+---
+> 
+>       parameter(nc=11,nd=386,nmax=12999999)            ! nd not used, nmax < 13,100,000
+454,455c503,504
+<       double precision tyear,datamin(nc+1,9999999)
+<       dimension idmy(7),dummy(24),correltime(nc),itime(4,9999999)
+---
+>       double precision tyear,datamin(nc+1,nmax)
+>       dimension idmy(7),dummy(24),correltime(nc),itime(4,nmax)
+459,460c508,509
+< cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+<  
+---
+>       common wst(6)
+>       common /years/year0,nyrs
+462,463d510
+< 
+<       finput2='1min/omni_min.asc'
+464a512
+>       finput2='1min/omni_min.asc'
+468,469c516
+< cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+< cccccccc  input the 1 day average ccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+---
+> cccc  input the 1 day average ccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+471d517
+<      
+475a522
+> 
+477c524
+< ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc	
+---
+> 
+481,482c528,530
+<       do j=1,9999999
+<       read(2,40,err=20,end=20) iyr4,idoy,ihr,imin,(idmy(i),i=1,7),d,ii
+---
+> 
+>       do j=1,nmax
+> 444   read(2,40,err=20,end=20) iyr4,idoy,ihr,imin,(idmy(i),i=1,7),d,ii
+484,485c532
+< 40    format(2I4,4I3,3I4,2I7,F6.2,I7, 8F8.2,4F8.1,F7.2,
+<      $F9.0,F6.2,2F7.2,F6.1,6F8.2)
+---
+>       IF (iyr4.lt.year0.or.iyr4.ge.year0+nyrs) go to 444  ! Alin
+505a553,555
+> 40    format(2I4,4I3,3I4,2I7,F6.2,I7, 8F8.2,4F8.1,F7.2,
+>      $F9.0,F6.2,2F7.2,F6.1,6F8.2)
+> 
+543a594,602
+>       i00=0
+> 
+>       DO 2002 j=1,ni
+> 
+> cw       if (itime(1,j).gt.i00.and.nyrs.gt.1)
+> cw     &   write (*,*) ' year',itime(1,j),' started'
+> cw       i00=itime(1,j)
+> 
+>        do 4000 k=2,12
+545,546d603
+<       do 2002 j=1,ni
+<         do 4000 k=2,12
+675c732,734
+< 2002	continue					
+---
+> 
+> 2002  Continue
+> 
+678a738
+> 
+680a741
+> 
+693d753
+< 
+694a755
+> 
+697c758
+<       common istart,wst(6)
+---
+>       common wst(6)
+708c769,770
+<       character finput1*30,finput2*30,fout*30
+---
+>       character finput1*30,finput2*30,fout*30,foutput*28
+>       character datechar*10,timechar*8,ychar*4,mchar*2,dchar*2
+710,718c772,775
+<       if(istart.eq.1) then
+<           do i=1,6
+<              W(i)=0.0
+<           enddo
+<       else
+<           do i=1,6
+<              W(i)=wst(i)/f(i)
+<           enddo
+<       endif  
+---
+>       do i=1,6
+>          W(i)=wst(i)/f(i)
+>          Wf(i)=0.0
+>       enddo
+724,727d780
+<       do i=1,6
+<          Wf(i)=0.0
+<       enddo
+<      
+734,741c787,792
+<       open(unit=3,file=fout,status='unknown')
+<       
+<       write(3,52) 'Year','Day','Hr','Min','ByIMF','BzIMF','V_SW',
+<      $'Den_P','Pdyn','G1','G2','G3','8 status','kp','akp3',
+<      $  'dst'
+<      $,'Bz1','Bz2','Bz3','Bz4','Bz5','Bz6','W1'
+<      $,'W2','W3','W4','W5','W6','6 stat'
+< 52    format(a5,a4,a3,a4,a6,7a7,a10,2a7,a6,6a7,6a9,a8)
+---
+> c      open(unit=3,file=fout,status='unknown')
+> c      write(3,52) 'Year','Day','Hr','Min','ByIMF','BzIMF','V_SW',
+> c     $'Den_P','Pdyn','G1','G2','G3','8 status','kp','akp3','dst'
+> c     $,'Bz1','Bz2','Bz3','Bz4','Bz5','Bz6','W1'
+> c     $,'W2','W3','W4','W5','W6','6 stat'
+> c52    format(a5,a4,a3,a4,a6,7a7,a10,2a7,a6,6a7,6a9,a8)
+745a797
+>       idayold=0
+749a802
+>        if (iyr1.ne.iyr) write (*,*) 'year mismatch in WGmin input'
+750a804,814
+> 
+>       call daymonth(iyr,idy,jmo,iday)
+>       call utc(iyr,jmo,iday,ihr,imn,datechar,timechar,mchar,dchar)
+>       if (idy.ne.idayold) then
+>        if (idayold.ne.0) close(3)
+>        idayold=idy
+>        write (ychar,'(i4)') iyr
+>        foutput=ychar//'/QinDenton_'//ychar//mchar//dchar//'_1min'
+>        open(unit=3,file=foutput,status='unknown')
+>       end if
+> 
+752c816
+<     
+---
+> 
+858,866c922,945
+<       if(idy1.eq.idy.and.ihr1.eq.ihr.and.imn1.eq.imn) then
+<          write(3,50)iyr,idy,ihr,imn,by,bz,v,den,p,G1,G2,G3,
+<      $iby,ibz,iv,id,ip,iG1,iG2,iG3,kp,kp3,dst,(bzn(i),i=1,6),
+<      $(W(i)*f(i),i=1,6),(iW(i),i=1,6)
+< 50    format(I5,I4,2I3,2f7.2,f7.1,2f7.2,3f7.2,i3,7i1,
+<      $f7.2,f7.2,i6,6f7.2,6f9.3,i3,5i1)
+<       endif
+<       
+<       goto 10
+---
+> 
+> c      if(idy1.eq.idy.and.ihr1.eq.ihr.and.imn1.eq.imn) then
+> c         write(3,50)iyr,idy,ihr,imn,by,bz,v,den,p,G1,G2,G3,
+> c     $iby,ibz,iv,id,ip,iG1,iG2,iG3,kp,kp3,dst,(bzn(i),i=1,6),
+> c     $(W(i)*f(i),i=1,6),(iW(i),i=1,6)
+> c50    format(I5,I4,2I3,2f7.2,f7.1,2f7.2,3f7.2,i3,7i1,
+> c     $f7.2,f7.2,i6,6f7.2,6f9.3,i3,5i1)
+> c      endif
+>       
+>       If (idy1.eq.idy.and.ihr1.eq.ihr.and.imn1.eq.imn) then
+> c       if (dst.ne.99999) 
+>        write (3,500)
+>      &  datechar,timechar,iyr,jmo,iday,ihr,imn,
+>      &  by,bz,v,den,p,G1,G2,G3,
+>      &  iby,ibz,iv,id,ip,iG1,iG2,iG3,
+>      &  kp,kp3,dst,(bzn(i),i=1,6),(W(i)*f(i),i=1,6),(iW(i),i=1,6)
+>       End If
+> 500    format(a10,'T',a8,i5,x,4i3,' 00',x,
+>      &  2f7.2,f7.1,x,2f7.2,x,3f7.2,x,
+>      &  8i2,x,
+>      &  2f6.2,i6,x,6f7.2,x,6f7.3,x,6i2)
+> 
+>       Go To 10
+> 
+870a950
+> 
+873a954,957
+> 
+> c  **********  FOR 5 MIN DATA ********************
+> 
+> 
+874a959
+> 
+875a961
+>      
+877d962
+<       common istart,wst(6)
+881c966,967
+<      
+---
+>       common wst(6)
+>       common /years/year0,nyrs
+883c969
+<       finput='5min/kpdst.lst' 
+---
+>       finput='5min/kpdst.lst'              ! Kp, Dst data from 1995 to 2015
+899a986
+>        IF (iyr4.lt.year0) go to 10          ! Alin: load data starting at year0
+937a1025
+> 
+938a1027
+> 
+941c1030
+<       common istart,wst(6)
+---
+>       common wst(6)
+1015a1105
+> 
+1016a1107
+> 
+1019c1110
+<         common istart,wst(6)
+---
+>         common wst(6)
+1026c1117
+<       finput='5min/omni_5min.asc' 
+---
+>       finput='5min/omni_5min.asc'              ! OMNI data from 1981 to 2015
+1059a1151,1152
+>       close(1) 
+>       close(2) 
+1063a1157
+> 
+1064a1159
+> 
+1065a1161
+> 
+1067,1069c1163,1165
+<       common istart,wst(6)
+<       parameter (nipyr=365,nyr=20,ni=nipyr*nyr, nj=11)
+<       dimension y(ni),p(ni,nj),w(ni,nj),pv(nj)
+---
+> 
+>       parameter (nipyr=365,nii=30000,nj=11)      
+>       dimension y(nii),p(nii,nj),w(nii,nj),pv(nj)
+1072a1169,1170
+>       common /years/year0,nyrs
+>       common wst(6)
+1074,1076c1172,1174
+<       y1= 1995.
+<       iy1= nint(y1)
+<       dyr= 1./nipyr
+---
+>       ni=nipyr*nyrs
+>       iy1= nint(year0)              ! was 1995, the 1min data over more than 20 years exceeds RAM 
+>       dyr= 1./nipyr                   !    also kpdst.lst starts 1995
+1088a1187
+> 
+1089a1189
+> 
+1093,1123c1193,1197
+<          if( mod(iyr4,4).eq.0 ) then
+<             doytot= 366.
+<          else
+<             doytot= 365.
+<          endif
+<          iyr4m= iyr4 - iy1
+< 
+<          yv= iyr4m + ( idoy -1. + (ihr + imin/60.0)/24. )/doytot
+< 
+<          rii= (yv-y(1))/dyr + 1.
+<          ii= rii
+<          ip= ii + 1
+<          fip= rii - ii
+<          fii= 1. - fip
+< 
+<          do 23008 j= 1,nj
+< 
+<          if( (j.eq.1 .or. j.eq.2).and. pv(j).eq.9999.99 ) go to 23008
+<             if( j.eq.3 .and. pv(j).eq.99999.9 ) go to 23008
+<             if( j.eq.4 .and. pv(j).eq.999.99 ) go to 23008
+<             if( j.eq.5 .and. pv(j).eq.99.99 ) go to 23008
+<             if( j.ge.6 .and. pv(j).eq.9999.99) go to 23008
+<             if( ii.ge.1 .and. ii.le.ni ) then
+<                p(ii,j)= p(ii,j) + fii*pv(j)
+<                w(ii,j)= w(ii,j) + fii
+<             endif
+<             if( ip.ge.1 .and. ip.le.ni ) then
+<                p(ip,j)= p(ip,j) + fip*pv(j)
+<                w(ip,j)= w(ip,j) + fip
+<             endif
+< 23008    continue
+---
+>       if( mod(iyr4,4).eq.0 ) then
+>          doytot= 366.
+>       else
+>          doytot= 365.
+>       endif
+1124a1199,1221
+>       iyr4m= iyr4 - iy1                                        ! can be negative
+>       yv= iyr4m + ( idoy -1. + (ihr + imin/60.0)/24. )/doytot
+>       rii= (yv-y(1))/dyr + 1.                                  ! can be negative
+>       ii= rii                                                  ! integer(rii)
+>       ip= ii + 1           
+>       fip= rii - ii
+>       fii= 1. - fip
+> 
+>       do 23008 j= 1,nj
+>         if( (j.eq.1 .or. j.eq.2).and. pv(j).eq.9999.99 ) go to 23008
+>           if( j.eq.3 .and. pv(j).eq.99999.9 ) go to 23008
+>           if( j.eq.4 .and. pv(j).eq.999.99 ) go to 23008
+>           if( j.eq.5 .and. pv(j).eq.99.99 ) go to 23008
+>           if( j.ge.6 .and. pv(j).eq.9999.99) go to 23008
+>           if( ii.ge.1 .and. ii.le.ni ) then     ! retains data only between year0 and year0+nyrs
+>              p(ii,j)= p(ii,j) + fii*pv(j)
+>              w(ii,j)= w(ii,j) + fii
+>           endif
+>           if( ip.ge.1 .and. ip.le.ni ) then
+>              p(ip,j)= p(ip,j) + fip*pv(j)
+>              w(ip,j)= w(ip,j) + fip
+>           endif
+> 23008 continue
+1127c1224,1225
+<   300 close(11,status='delete')
+---
+> 300   close(11,status='delete')
+> 
+1136a1235
+> 
+1138,1141c1237,1240
+<       do 23014 i= 1,ni
+< 	   yrdouble=y(i)+iy1
+<           write(21,2100) yrdouble,(p(i,j),j=1,nj)
+<  2100       format(f9.4,11(1x,f9.4))
+---
+>       do 23014 i= 1,ni                                 ! output at year0-(year0+nyrs)
+>          yrdouble=y(i)+iy1
+>          write(21,2100) yrdouble,(p(i,j),j=1,nj)
+>  2100    format(f9.4,11(1x,f9.4))
+1144c1243
+<  1000 continue 
+---
+> 
+1145a1245
+> 
+1148a1249
+> 
+1149a1251
+> 
+1150a1253
+> 
+1152,1153c1255,1256
+<       common istart,wst(6)
+<       parameter (ni=365*20,nk=12)
+---
+> 
+>       parameter (nk=12)                   
+1155c1258
+<       dimension av1(nk,ni),gamma(6)
+---
+>       dimension av1(nk,36500),gamma(6)
+1156a1260,1261
+>       common /years/year0,nyrs
+>       common wst(6)
+1158c1263
+< cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc   
+---
+>       ni=365*nyrs
+1162d1266
+< ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc	
+1165,1166c1269,1270
+<       do i=1,365*20
+<       read(1,*,end=35) (av1(j,i),j=1,12)
+---
+>       do i=1,ni
+>        read(1,*,end=35) (av1(j,i),j=1,nk)        ! loads data at year0-(year0+nyrs)
+1171c1275
+<         do  k=2,12
+---
+>         do  k=2,nk
+1195c1299
+<          do k=7,12
+---
+>          do k=7,nk
+1202c1306
+<          write(2,2100) (av1(j,i),j=1,nk)
+---
+>          write(2,2100) (av1(j,i),j=1,nk)     ! output at year0-(year0+nyrs)
+1207a1312
+> 
+1210a1316
+> 
+1212c1318,1320
+< c    This program  interpolates across the gaps in the one-minute data     
+---
+> 
+> c    This program  interpolates across the gaps in the 5-minute data     
+> 
+1214,1215c1322,1323
+<       common istart,wst(6)
+<       parameter(nc=11)
+---
+> 
+>       parameter(nc=11,nmax=5000000)                       ! 105192*nyrs < nmax < 8e6
+1218,1219c1326,1327
+<       double precision tyear,data5min(nc+1,2500000)
+<       dimension idmy(7),dummy(24),correltime(nc),itime(4,2500000)
+---
+>       double precision tyear,data5min(nc+1,nmax) 
+>       dimension idmy(7),dummy(24),correltime(nc),itime(4,nmax)
+1223c1331,1334
+< cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+---
+>       common wst(6)
+>       common /years/year0,nyrs
+> 
+>       finput1='5min/interav1day5min.d'   
+1225d1335
+<       finput1='5min/interav1day5min.d'
+1227a1338
+> 
+1231c1342
+<       read(1,*,end=34)(av1(j,i),j=1,12)
+---
+>       read(1,*,end=34)(av1(j,i),j=1,12)    ! loads data at year0-(year0+nyrs)
+1236d1346
+< ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc	
+1240,1241c1350,1352
+<       do i=1,9999999
+<       read(2,40,err=20,end=20) iyr4,idoy,ihr,imin,aa,By,Bz,aa,
+---
+> 
+>       do i=1,nmax
+> 555   read(2,40,err=20,end=20) iyr4,idoy,ihr,imin,aa,By,Bz,aa,
+1243c1354
+< 40    format(2I4,2I3,a77,2f8.2,a16,f8.1,a24,f7.2,a9,f6.2,a68)
+---
+>        IF (iyr4.lt.year0.or.iyr4.ge.year0+nyrs) go to 555  ! Alin: load data  at year0-(year0+nyrs)
+1253c1364
+<          data5min(4,n)=V  !v 
+---
+>          data5min(4,n)=V   !v 
+1255c1366
+<          data5min(6,n)=P !pdyn
+---
+>          data5min(6,n)=P   !pdyn
+1263a1375
+> 40    format(2I4,2I3,a77,2f8.2,a16,f8.1,a24,f7.2,a9,f6.2,a68)
+1299a1412,1420
+>       i00=0
+> 
+>       DO 2002 j=1,ni
+> 
+> cw       if (itime(1,j).gt.i00.and.nyrs.gt.1)
+> cw     &    write (*,*) ' year',itime(1,j),' started'
+>        i00=itime(1,j)
+> 
+>        do 4000 k=2,12
+1301,1302d1421
+<       do 2002 j=1,ni
+<         do 4000 k=2,12
+1303a1423
+> 
+1320d1439
+< 
+1325d1443
+<                       
+1327c1445
+<        	      DO WHILE (data5min(k,i1(n)) .eq. 9999.99)
+---
+>               DO WHILE (data5min(k,i1(n)) .eq. 9999.99)
+1334d1451
+<          
+1343d1459
+<      
+1352d1467
+<     
+1361c1476
+< 	 endif  
+---
+>         endif  
+1379c1494
+< 	        ainter(n)=data5min(k,i2(n))
+---
+>                 ainter(n)=data5min(k,i2(n))
+1387c1502
+<        	      if((i2(n)-j) .lt. ii) ainter(n)=data5min(k,i2(n))
+---
+>               if((i2(n)-j) .lt. ii) ainter(n)=data5min(k,i2(n))
+1389c1504
+<        	      if((j-i1(n)) .ge. ii .and. (i2(n)-j) .ge. ii) then
+---
+>               if((j-i1(n)) .ge. ii .and. (i2(n)-j) .ge. ii) then
+1392c1507
+<     	         wav=1-w1-w2
+---
+>                  wav=1-w1-w2
+1394c1509
+< 	         if(data5min(1,j).lt. av1(1,1)) fav=av1(k,1)
+---
+>                  if(data5min(1,j).lt. av1(1,1)) fav=av1(k,1)
+1403c1518
+<                  enddo	                  
+---
+>                  enddo                 
+1418c1533
+< 	          
+---
+>           
+1429c1544,1546
+< 2002  continue					
+---
+> 
+> 2002  Continue
+> 
+1432a1550
+> 
+1433a1552,1553
+> 
+> 
+1434a1555,1556
+> ccc  Alin: Calculation of W pars is recursive, all but W3 converge quickly
+> 
+1437c1559
+<       common istart,wst(6)
+---
+>       common wst(6)
+1448c1570,1571
+<       character finput1*30,finput2*30,fout*30
+---
+>       character finput1*30,finput2*30,fout*30,foutput*28
+>       character datechar*10,timechar*8,ychar*4,mchar*2,dchar*2
+1450,1458c1573,1576
+<       if(istart.eq.1) then          
+<           do i=1,6
+<              W(i)=0.0
+<           enddo
+<       else
+<           do i=1,6
+<              W(i)=wst(i)/f(i)
+<           enddo
+<       endif  
+---
+>       do i=1,6
+>         W(i)=wst(i)/f(i)
+>         Wf(i)=0.0
+>       enddo
+1464,1468d1581
+<       do i=1,6
+<          Wf(i)=0.0
+<       enddo
+< 
+<       
+1475,1482c1588,1594
+<       open(unit=3,file=fout,status='unknown')
+<       write(3,52) 'Year','Day','Hr','Min','ByIMF','BzIMF','V_SW',
+<      $'Den_P','Pdyn','G1','G2','G3','8 status','kp','akp3',
+<      $  'dst'
+<      $,'Bz1','Bz2','Bz3','Bz4','Bz5','Bz6','W1'
+<      $,'W2','W3','W4','W5','W6','6 stat'
+< 52    format(a5,a4,a3,a4,a6,7a7,a10,2a7,a6,6a7,6a9,a8)
+<      
+---
+> c      open(unit=3,file=fout,status='unknown')
+> c      write(3,52) 'Year','Day','Hr','Min','ByIMF','BzIMF','V_SW',
+> c     $'Den_P','Pdyn','G1','G2','G3','8 status','kp','akp3','dst',
+> c     $'Bz1','Bz2','Bz3','Bz4','Bz5','Bz6',
+> c     $'W1','W2','W3','W4','W5','W6','6 stat'
+> c52    format(a5,a4,a3,a4,a6,7a7,a10,2a7,a6,6a7,6a9,a8)
+> 
+1485a1598
+>       idayold=0
+1489a1603,1604
+>        if (iyr1.ne.iyr) write (*,*) 'year mismatch in WG_5min input',
+>      & iyr1, iyr
+1490a1606,1616
+>  
+>       call daymonth(iyr,idy,jmo,iday)
+>       call utc(iyr,jmo,iday,ihr,imn,datechar,timechar,mchar,dchar)
+>       if (idy.ne.idayold) then
+>        if (idayold.ne.0) close(3)
+>        idayold=idy
+>        write (ychar,'(i4)') iyr
+>        foutput=ychar//'/QinDenton_'//ychar//mchar//dchar//'_5min'
+>        open(unit=3,file=foutput,status='unknown')
+>       end if
+> 
+1491a1618
+> 
+1579c1706
+<          W(i)=r(i)/12.0*S(i)+W(i)*exp(-r(i)/12.0)
+---
+>          W(i)=r(i)/12.0*S(i)+W(i)*exp(-r(i)/12.0)            ! previous W(i) are used !!!!
+1596,1602c1723,1746
+<       if(idy1.eq.idy.and.ihr1.eq.ihr.and.imn1.eq.imn) then
+<          write(3,50)iyr,idy,ihr,imn,by,bz,v,den,p,G1,G2,G3,
+<      $iby,ibz,iv,id,ip,iG1,iG2,iG3,kp,kp3,dst,(bzn(i),i=1,6),
+<      $(W(i)*f(i),i=1,6),(iW(i),i=1,6)
+< 50    format(I5,I4,2I3,2f7.2,f7.1,2f7.2,3f7.2,i3,7i1,
+<      $f7.2,f7.2,i6,6f7.2,6f9.3,i3,5i1)
+<       endif
+---
+> c Alin: matching of years in input files was not inforced (is now), 
+> c resulting in combining KpDst data starting 1995 with OMNI W/G parameters starting 1981
+> c day-tag mismatch of leap and non-leap years entries led to some years being skipped 
+> 
+> c      if(idy1.eq.idy.and.ihr1.eq.ihr.and.imn1.eq.imn) then
+> c         write(3,50)iyr,idy,ihr,imn,by,bz,v,den,p,G1,G2,G3,
+> c     $iby,ibz,iv,id,ip,iG1,iG2,iG3,kp,kp3,dst,(bzn(i),i=1,6),
+> c     $(W(i)*f(i),i=1,6),(iW(i),i=1,6)
+> c50    format(I5,I4,2I3,2f7.2,f7.1,2f7.2,3f7.2,i3,7i1,
+> c     $f7.2,f7.2,i6,6f7.2,6f9.3,i3,5i1)
+> c      endif
+> 
+>       If (idy1.eq.idy.and.ihr1.eq.ihr.and.imn1.eq.imn) then
+> c       if (dst.ne.99999) 
+>        write (3,500)
+>      &  datechar,timechar,iyr,jmo,iday,ihr,imn,            
+>      &  by,bz,v,den,p,G1,G2,G3,
+>      &  iby,ibz,iv,id,ip,iG1,iG2,iG3,
+>      &  kp,kp3,dst,(bzn(i),i=1,6),(W(i)*f(i),i=1,6),(iW(i),i=1,6)
+>       End If
+> 500    format(a10,'T',a8,i5,x,4i3,' 00',x,                
+>      &  2f7.2,f7.1,x,2f7.2,x,3f7.2,x,
+>      &  8i2,x,
+>      &  2f6.2,i6,x,6f7.2,x,6f7.3,x,6i2)
+1604c1748,1749
+<       goto 10
+---
+>       Go To 10
+> 
+1610a1756,1828
+> 
+>       Subroutine daymonth(iyear,idy,jmo,iday)
+> 
+>       integer jdm(12)
+>       data jdm/31,28,31,30,31,30,31,31,30,31,30,31/
+> 
+>       jdm(2)=28
+>       if (mod(iyear,4).eq.0) jdm(2)=29
+>       iday=idy
+>       j=0
+>  10   j=j+1
+>       if (iday.le.jdm(j)) then
+>        jmo=j
+>       else
+>        iday=iday-jdm(j)
+>        go to 10
+>       end if
+> 
+>       return
+>       End
+> cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+> 
+>       Subroutine utc(iyr,jmo,iday,ihr,imn,datechar,timechar,mo,dy)
+> 
+>       character datechar*10,timechar*8
+>       character year*4,m*1,mo*2,d*1,dy*2,h*1,hr*2,n*1,nm*2
+> 
+>       write (year,'(i4)') iyr
+> 
+>       if (jmo.lt.10) then
+>         write (m,'(i1)') jmo
+>         mo='0'//m
+>        else
+>         write (mo,'(i2)') jmo
+>        end if
+> 
+>        if (iday.lt.10) then
+>         write (d,'(i1)') iday
+>         dy='0'//d
+>        else
+>         write (dy,'(i2)') iday
+>        end if
+> 
+>        if (ihr.lt.10) then
+>         write (h,'(i1)') ihr
+>         hr='0'//h
+>        else
+>         write (hr,'(i2)') ihr
+>        end if
+> 
+>        if (imn.lt.10) then
+>         write (n,'(i1)') imn
+>         nm='0'//n
+>        else
+>         write (nm,'(i2)') imn
+>        end if
+> 
+>        datechar=year//'-'//mo//'-'//dy
+>        timechar=hr//':'//nm//':00'
+> 
+>       return
+>       End
+> 
+> 
+> cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+> 
+> 
+> c     ******   FOR 1 HOUR DATA  ********
+> 
+> 
+> ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+> 
+> 
+1611a1830
+> 
+1613d1831
+<       common istart,wst(6)
+1619a1838,1839
+>       common wst(6)
+>       common /years/year0,nyrs
+1641a1862
+>        IF (iyr4.lt.year0.or.iyr4.ge.year0+nyrs) go to 10  ! Alin
+1646a1868
+> 
+1697a1920
+> 
+1698a1922
+> 
+1699a1924
+> 
+1701,1703c1926,1927
+<       common istart,wst(6)
+<       parameter (nipyr=1,nyr=50,ni=nipyr*nyr, nj=11)
+<       dimension y(ni),p(ni,nj),w(ni,nj),pv(nj)
+---
+>       parameter (nipyr=1,nii=1000, nj=11)
+>       dimension y(nii),p(nii,nj),w(nii,nj),pv(nj)
+1707c1931,1932
+<            
+---
+>       common wst(6)
+>       common /years/year0,nyrs
+1709,1710c1934,1935
+<       y1=1963.
+<       iy1=nint(y1)
+---
+>       ni=nipyr*nyrs
+>       iy1=nint(year0)                       ! was 1963
+1785a2011
+> 
+1786a2013
+> 
+1787a2015
+> 
+1789,1791c2017,2018
+<       common istart,wst(6)
+<       parameter (nipyr=18,nyr=50,ni=nipyr*nyr, nj=11)
+<       dimension y(ni),p(ni,nj),w(ni,nj),pv(nj)
+---
+>       parameter (nipyr=18,nii=10000,nj=11)
+>       dimension y(nii),p(nii,nj),w(nii,nj),pv(nj)
+1795c2022,2023
+<            
+---
+>       common wst(6)
+>       common /years/year0,nyrs
+1797,1798c2025,2026
+<       y1=1963.
+<       iy1=nint(y1)
+---
+>       ni=nipyr*nyrs
+>       iy1=nint(year0)                ! was 1963
+1872a2101
+> 
+1873a2103
+> 
+1875a2106
+> 
+1877c2108
+<       common istart,wst(6)
+---
+>       common wst(6)
+1889d2119
+<       
+1895d2124
+< cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+1896a2126
+> 
+1904d2133
+< ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc	
+2034a2264
+> 
+2035a2266
+> 
+2036a2268
+> 
+2038c2270
+<       common istart,wst(6)
+---
+>       common wst(6)
+2049d2280
+< cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+2051d2281
+<     
+2057d2286
+< 
+2058a2288
+> 
+2065,2066c2295,2296
+<       nd=i-1
+< ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc	
+---
+>       nd=i-1  
+> 
+2096c2326,2327
+<       nm=n
+---
+> 
+>       nm=n-1
+2133a2365
+> 
+2134a2367
+> 
+2205d2437
+< 
+2277c2509,2511
+< 2002	continue					
+---
+> 
+> 2002  Continue
+> 
+2282c2516,2517
+< cccccccccccccc end of intehour  ccccccccccccccccccccccccccccccccccccccccccccccccccccc
+---
+> cccccccccccccc end of interhour  ccccccccccccccccccccccccccccccccccccccccccccccccccccc
+> 
+2284a2520
+> 
+2285a2522
+> 
+2287c2524
+<       common istart,wst(6)
+---
+>       common wst(6)
+2293,2294c2530
+<       data f/1.069748,1.024995,1.247411,1.100432,0.9768723,
+<      $1.134791/   
+---
+>       data f/1.069748,1.024995,1.247411,1.100432,0.9768723,1.134791/   
+2299c2535,2536
+<       character finput*30,fout*30,aa
+---
+>       character finput*30,fout*30,aa,foutput*28
+>       character datechar*10,timechar*8,ychar*4,mchar*2,dchar*2
+2301,2311c2538,2541
+<       
+<       
+<       if(istart.eq.1) then
+<           do i=1,6
+<              W(i)=0.0
+<           enddo
+<       else
+<           do i=1,6
+<              W(i)=wst(i)/f(i)
+<           enddo
+<       endif  
+---
+>       do i=1,6
+>         W(i)=wst(i)/f(i)
+>         Wf(i)=0.0
+>       enddo
+2316,2321d2545
+<       
+<       do i=1,6
+<          Wf(i)=0.0
+<       enddo
+< 
+< 
+2326,2332c2550,2555
+<       open(unit=3,file=fout,status='unknown')
+<       write(3,52) 'Year','Day','Hr','ByIMF','BzIMF','V_SW',
+<      $'Den_P','Pdyn','G1','G2','G3','8 status','kp','akp3',
+<      $  'dst'
+<      $,'Bz1','Bz2','Bz3','Bz4','Bz5','Bz6','W1'
+<      $,'W2','W3','W4','W5','W6','6 stat'
+< 52    format(a5,a4,a3,a7,7a7,a10,2a7,a6,6a7,6a9,a8)
+---
+> c      open(unit=3,file=fout,status='unknown')
+> c      write(3,52) 'Year','Day','Hr','ByIMF','BzIMF','V_SW',
+> c     $'Den_P','Pdyn','G1','G2','G3','8 status','kp','akp3','dst'
+> c     $,'Bz1','Bz2','Bz3','Bz4','Bz5','Bz6','W1'
+> c     $,'W2','W3','W4','W5','W6','6 stat'
+> c52    format(a5,a4,a3,a7,7a7,a10,2a7,a6,6a7,6a9,a8)
+2336a2560,2561
+>       idayold=0
+>       imn=0
+2341a2567,2577
+> 
+>       call daymonth(iyr,idy,jmo,iday)
+>       call utc(iyr,jmo,iday,ihr,imn,datechar,timechar,mchar,dchar)
+>       if (idy.ne.idayold) then
+>        if (idayold.ne.0) close(3)
+>        idayold=idy
+>        write (ychar,'(i4)') iyr
+>        foutput=ychar//'/QinDenton_'//ychar//mchar//dchar//'_hour'
+>        open(unit=3,file=foutput,status='unknown')
+>       end if
+> 
+2364a2601
+> 
+2452,2457c2689,2704
+<          write(3,50)iyr,idy,ihr,by,bz,v,den,p,G1,G2,G3,
+<      $iby,ibz,iv,id,ip,iG1,iG2,iG3,kp,kp3,dst,(bznb(i),i=1,6),
+<      $(W(i)*f(i),i=1,6),(iW(i),i=1,6)
+< 50    format(I5,I4,I3,2f7.2,f7.1,2f7.2,3f7.2,i3,7i1,
+<      $f7.2,f7.2,i6,6f7.2,6f9.3,i3,5i1)
+<       
+---
+> c         write(3,50)iyr,idy,ihr,by,bz,v,den,p,G1,G2,G3,
+> c     $iby,ibz,iv,id,ip,iG1,iG2,iG3,kp,kp3,dst,(bznb(i),i=1,6),
+> c     $(W(i)*f(i),i=1,6),(iW(i),i=1,6)
+> c50    format(I5,I4,I3,2f7.2,f7.1,2f7.2,3f7.2,i3,7i1,
+> c     $f7.2,f7.2,i6,6f7.2,6f9.3,i3,5i1)
+>  
+> cx       if (dst.ne.99999) 
+>         write (3,500)
+>      &  datechar,timechar,iyr,jmo,iday,ihr,imn,
+>      &  by,bz,v,den,p,G1,G2,G3,
+>      &  iby,ibz,iv,id,ip,iG1,iG2,iG3,
+>      &  kp,kp3,dst,(bznb(i),i=1,6),(W(i)*f(i),i=1,6),(iW(i),i=1,6)
+> 500    format(a10,'T',a8,i5,x,4i3,' 00',x,
+>      &  2f7.2,f7.1,x,2f7.2,x,3f7.2,x,
+>      &  8i2,x,
+>      &  2f6.2,i6,x,6f7.2,x,6f7.3,x,6i2)
+2459c2706,2707
+<       goto 10
+---
+>       Go to 10
+> 
