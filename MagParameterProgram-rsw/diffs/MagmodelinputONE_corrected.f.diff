@@ -1,4 +1,11 @@
-2405c2405
-<             iG2=nint((ibz+iv)/2.)
----
->             iG2=nint((ibz+iv)/3.)
+--- MagmodelinputONE_corrected.f	2013-02-01 15:13:46.000000000 -0500
++++ MagmodelinputONE.f	2013-02-01 15:13:46.000000000 -0500
+@@ -2402,7 +2402,7 @@
+             G2 = sum2/12./200.
+             G3 = sum3/12./2000.
+             iG1=nint((iby+ibz+iv)/3.)
+-            iG2=nint((ibz+iv)/2.)
++            iG2=nint((ibz+iv)/3.)
+             iG3=nint((ibz+iv+id)/3.)
+              
+ cccccccccccccc W parameters ccccccccccccccccccccccccccccccccccccccccccccc
