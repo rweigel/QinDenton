@@ -2,20 +2,21 @@
 # Change version numbers VerHr and VerMN as appropriate
 
 # Data version numbers - will be over-ridden by command line arguments.
-VerHr=9
-VerMn=7
+VerHr=$$(date +%Y%m)
+VerMn=$$(date +%Y%m)
+
 TIMESTAMP=00000000
 
 program=MagmodelinputONE_corrected2
 
-# Location to place downloaded OMNI data from NSSDC ftp site
-DIRTMP=/tmp/QinDenton/tmp
+# Dir for downloaded OMNI data from NSSDC ftp site
+DIRTMP=~/tmp/QinDenton/tmp
 
-# Location to place local copies of ASCII input and output data
-DATADIR=/tmp/QinDenton/io
+# Dir for local copies of ASCII input and output data
+DATADIR=~/tmp/QinDenton/io
 
-# Location to place final copies of ASCII input and output data
-MERGEDIR=/tmp/QinDenton/merged
+# Dir for finall copies of ASCII input and output data
+MERGEDIR=./merged
 
 dirs:
 	- mkdir -p $(DIRTMP)
@@ -23,10 +24,9 @@ dirs:
 	- mkdir -p $(MERGEDIR)
 
 allhour:
-#	make cleanhour # Uncomment this to force update even if not needed
 	make dirs
 	make $(program)
-	make ishourupdateneeded
+#	make ishourupdateneeded
 	make omnikpdst
 	make omniupdatehour
 	make hourall
@@ -37,16 +37,14 @@ allhour:
 
 all5min:
 	make dirs
-#	make clean5min # Uncomment this to force update even if not needed
 	make $(program)
-#	make is5minupdateneeded # Not implemented
 	make omnikpdst
 	make omniupdate5min
 	make 5minall
 	make mergekpdst
 	make merge5min
 	make mergetoftp5min
-#	make symlink5min
+	make symlink5min
 
 all1min:
 	make dirs
@@ -102,10 +100,10 @@ mergehour: hour/omni2_hour.dat
 	zip -j $(DIRTMP)/WGhour-v$(VerHr).d.zip ./hour/WGhour.d
 
 mergetoftphour:
-	mkdir -p $(DIRTMP)
 	mkdir -p $(MERGEDIR)/hour/merged
 	mv $(DIRTMP)/omni2_hour-v$(VerHr).dat.zip $(MERGEDIR)/hour/merged
 	mv $(DIRTMP)/WGhour-v$(VerHr).d.zip $(MERGEDIR)/hour/merged
+	cp ./hour/WGhour.d $(MERGEDIR)/hour/merged/WGhour-v$(VerHr).d
 
 mergetoftp5min:
 	mkdir -p $(MERGEDIR)/5min/merged
@@ -119,6 +117,12 @@ mergetoftp1min:
 	mv $(DIRTMP)/WGparametersmin-v$(VerMn).d.zip $(MERGEDIR)/1min/merged
 	cp $(DIRTMP)/kpdst.lst.zip ./1min/kpdst.lst $(MERGEDIR)/1min/merged
 
+rsynchour:
+	rsync -avz merged/hour weigel@mag.gmu.edu:/var/www/ftp/QinDenton
+
+rsync5min:
+	rsync -avz merged/5min weigel@mag.gmu.edu:/var/www/ftp/QinDenton
+
 symlinkhour:
 	mkdir -p $(MERGEDIR)/hour/merged/latest
 	rm -f $(MERGEDIR)/hour/merged/latest/*
@@ -127,13 +131,16 @@ symlinkhour:
 	cd $(MERGEDIR)/hour/merged/latest; \
 	 ln -s ../WGhour-v$(VerHr).d.zip WGhour-latest.d.zip
 	cd $(MERGEDIR)/hour/merged/latest; \
-	 ln -s ../QinDenton_hour_merged_$(TIMESTAMP)-v$(VerHr).cdf.zip QinDenton_hour-latest.cdf.zip
-	cd $(MERGEDIR)/hour/merged/latest; \
-	 ln -s ../QinDenton_hour_merged_$(TIMESTAMP)-v$(VerHr).cdf QinDenton_hour-latest.cdf
-	cd $(MERGEDIR)/hour/merged/latest; \
-	 ln -s ../QinDenton_hour_merged_$(TIMESTAMP)-v$(VerHr).mat.zip QinDenton_hour-latest.mat.zip
-	cd $(MERGEDIR)/hour/merged/latest; \
-	 ln -s ../QinDenton_hour_merged_$(TIMESTAMP)-v$(VerHr).mat QinDenton_hour-latest.mat
+	 ln -s ../WGhour-v$(VerHr).d WGhour-latest.d
+
+#	cd $(MERGEDIR)/hour/merged/latest; \
+#	 ln -s ../QinDenton_hour_merged_$(TIMESTAMP)-v$(VerHr).cdf.zip QinDenton_hour-latest.cdf.zip
+#	cd $(MERGEDIR)/hour/merged/latest; \
+#	 ln -s ../QinDenton_hour_merged_$(TIMESTAMP)-v$(VerHr).cdf QinDenton_hour-latest.cdf
+#	cd $(MERGEDIR)/hour/merged/latest; \
+#	 ln -s ../QinDenton_hour_merged_$(TIMESTAMP)-v$(VerHr).mat.zip QinDenton_hour-latest.mat.zip
+#	cd $(MERGEDIR)/hour/merged/latest; \
+#	 ln -s ../QinDenton_hour_merged_$(TIMESTAMP)-v$(VerHr).mat QinDenton_hour-latest.mat
 
 symlink5min:
 	mkdir -p $(MERGEDIR)/5min/merged/latest
@@ -143,13 +150,16 @@ symlink5min:
 	cd $(MERGEDIR)/5min/merged/latest; \
 	 ln -s ../kpdst.lst.zip kpdst-latest.lst.zip
 	cd $(MERGEDIR)/5min/merged/latest; \
-	 ln -s ../QinDenton_5min_merged_$(TIMESTAMP)-v$(VerMn).cdf.zip QinDenton_5min-latest.cdf.zip
-	cd $(MERGEDIR)/5min/merged/latest; \
-	 ln -s ../QinDenton_5min_merged_$(TIMESTAMP)-v$(VerMn).cdf QinDenton_5min-latest.cdf
-	cd $(MERGEDIR)/5min/merged/latest; \
-	 ln -s ../QinDenton_5min_merged_$(TIMESTAMP)-v$(VerMn).mat.zip QinDenton_5min-latest.mat.zip
-	cd $(MERGEDIR)/5min/merged/latest; \
-	 ln -s ../QinDenton_5min_merged_$(TIMESTAMP)-v$(VerMn).mat QinDenton_5min-latest.mat
+	 ln -s ../omni_5min-v$(VerMn).asc.zip omni_5min-latest.asc.zip
+
+#	cd $(MERGEDIR)/5min/merged/latest; \
+#	 ln -s ../QinDenton_5min_merged_$(TIMESTAMP)-v$(VerMn).cdf.zip QinDenton_5min-latest.cdf.zip
+#	cd $(MERGEDIR)/5min/merged/latest; \
+#	 ln -s ../QinDenton_5min_merged_$(TIMESTAMP)-v$(VerMn).cdf QinDenton_5min-latest.cdf
+#	cd $(MERGEDIR)/5min/merged/latest; \
+#	 ln -s ../QinDenton_5min_merged_$(TIMESTAMP)-v$(VerMn).mat.zip QinDenton_5min-latest.mat.zip
+#	cd $(MERGEDIR)/5min/merged/latest; \
+#	 ln -s ../QinDenton_5min_merged_$(TIMESTAMP)-v$(VerMn).mat QinDenton_5min-latest.mat
 
 symlink1min:
 	mkdir -p $(MERGEDIR)/1min/merged/latest
@@ -158,14 +168,14 @@ symlink1min:
 	 ln -s ../WGparametersmin-v$(VerMn).d.zip WGparametersmin-latest.d.zip
 	cd $(MERGEDIR)/1min/merged/latest; \
 	 ln -s ../omni_min-v$(VerMn).asc.zip omni_min-latest.asc.zip
-	cd $(MERGEDIR)/1min/merged/latest; \
-	 ln -s ../QinDenton_1min_merged_$(TIMESTAMP)-v$(VerMn).cdf.zip QinDenton_1min-latest.cdf.zip
-	cd $(MERGEDIR)/1min/merged/latest; \
-	 ln -s ../QinDenton_1min_merged_$(TIMESTAMP)-v$(VerMn).cdf QinDenton_1min-latest.cdf
-	cd $(MERGEDIR)/1min/merged/latest; \
-	 ln -s ../QinDenton_1min_merged_$(TIMESTAMP)-v$(VerMn).mat.zip QinDenton_1min-latest.mat.zip
-	cd $(MERGEDIR)/1min/merged/latest; \
-	 ln -s ../QinDenton_1min_merged_$(TIMESTAMP)-v$(VerMn).mat QinDenton_1min-latest.mat
+#	cd $(MERGEDIR)/1min/merged/latest; \
+#	 ln -s ../QinDenton_1min_merged_$(TIMESTAMP)-v$(VerMn).cdf.zip QinDenton_1min-latest.cdf.zip
+#	cd $(MERGEDIR)/1min/merged/latest; \
+#	 ln -s ../QinDenton_1min_merged_$(TIMESTAMP)-v$(VerMn).cdf QinDenton_1min-latest.cdf
+#	cd $(MERGEDIR)/1min/merged/latest; \
+#	 ln -s ../QinDenton_1min_merged_$(TIMESTAMP)-v$(VerMn).mat.zip QinDenton_1min-latest.mat.zip
+#	cd $(MERGEDIR)/1min/merged/latest; \
+#	 ln -s ../QinDenton_1min_merged_$(TIMESTAMP)-v$(VerMn).mat QinDenton_1min-latest.mat
 
 omnikpdst:
 	make 5min/kpdst.lst
@@ -244,7 +254,7 @@ hourall: MagmodelinputONE_corrected hour/omni2_hour.dat
 # Tests
 #
 # Compare sample output from Denton.  Differences are probably due to
-# the fact that the omni2_2000.dat file changed at SPDF between the
+# the fact that the omni2_2000.dat file changed (?!) at SPDF between the
 # time Denton downloaded it and the time it was downloaded
 # and copied to ./hour (a year or so later).
 testhour2000: MagmodelinputONE

@@ -1,0 +1,1 @@
+0 0 1 * * cd ~/QinDenton/MagParameterProgram-rsw; make allhour; make all5min
